@@ -13,34 +13,29 @@ import java.io.IOException;
 public class WebScraper {
 
     /**
-     * Connects to a URL, scrapes the main article text, and returns it.
+     * Connects to a URL, scrapes the main article text, and returns it as a
+     * clean string containing only lowercase letters and spaces.
      *
      * @param url The URL of the page to scrape.
-     * @return The text content of the page, or null if an error occurs.
+     * @return The cleaned text content of the page, or null if an error occurs.
      */
     public String scrapeUrl(String url) {
         try {
-            // Connect to the URL and get the HTML document.
             Document doc = Jsoup.connect(url).get();
-            // Select the main content area of a Wikipedia page (#mw-content-text).
-            Element contentDiv = doc.selectFirst("#mw-content-text");
+            Element textBody = doc.selectFirst("#mw-content-text");
 
-            if (contentDiv != null) {
-                Element textBody = contentDiv.selectFirst(".mw-parser-output");
-                if (textBody != null) {
-                    // Return the text content, converted to lowercase for consistent counting.
-                    return textBody.text().toLowerCase();
-                }
+            if (textBody != null) {
+                return textBody.text().toLowerCase();
+
+            } else {
+                System.err.println("  - Could not find main content on page: " + url);
+                return null;
             }
 
-            // If the main content area can't be found, return null.
-            System.err.println("  - Could not find main content on page: " + url);
-            return null;
-
         } catch (IOException e) {
-            // If there's a connection or network error, print a message and return null.
             System.err.println("  - Error connecting to " + url + ": " + e.getMessage());
             return null;
         }
     }
 }
+
