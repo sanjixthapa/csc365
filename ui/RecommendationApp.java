@@ -3,15 +3,14 @@ package ui;
 import services.WebScraper;
 import logic.TextProcessor;
 import logic.SimilarityCalculator;
-import logic.SimilarityCalculator.SimilarityPair;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 
 public class RecommendationApp extends JFrame {
 
@@ -28,15 +27,27 @@ public class RecommendationApp extends JFrame {
 
     public RecommendationApp() {
         setupUI();
+    }
+
+    public void run() {
+        System.out.println("Loading pages...");
         loadPages();
-        populateDropdown();
+        if (urls.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No pages loaded! Check urls.txt file.");
+            return;
+        }
+        for (String title : titles) {
+            pageSelector.addItem(title);
+        }
+        setVisible(true);
+        System.out.println("Ready! Loaded " + urls.size() + " pages.");
     }
 
     private void setupUI() {
         setTitle("Wikipedia Recommender");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 400);
-        setLocationRelativeTo(null); // Center the window on the screen
+        setLocationRelativeTo(null);
 
         JPanel topPanel = new JPanel();
         topPanel.add(new JLabel("Select a page:"));
@@ -48,71 +59,67 @@ public class RecommendationApp extends JFrame {
         JButton findButton = new JButton("Find Similar");
         findButton.addActionListener(e -> findSimilarPages());
         topPanel.add(findButton);
+
         add(topPanel, BorderLayout.NORTH);
 
         resultsArea = new JTextArea();
-        resultsArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         resultsArea.setEditable(false);
-        resultsArea.setLineWrap(true);
-        resultsArea.setWrapStyleWord(true);
+        resultsArea.setFont(new Font("Arial", Font.PLAIN, 12));
         add(new JScrollPane(resultsArea), BorderLayout.CENTER);
     }
 
     private void loadPages() {
-        System.out.println("Loading pages");
         try (BufferedReader reader = new BufferedReader(new FileReader("src/urls.txt"))) {
             String url;
             while ((url = reader.readLine()) != null) {
                 url = url.trim();
                 if (url.isEmpty()) continue;
 
-                System.out.println("Processing: " + url);
-                String[] pageData = scraper.scrapePage(url);
-
-                if (pageData != null) {
-                    String title = pageData[0];
-                    String content = pageData[1];
-                    Map<String, Integer> wordCounts = processor.getWordFrequencies(content);
+                System.out.println("Loading: " + url);
+                String content = scraper.scrapeUrl(url);
+                if (content != null) {
+                    String title = scraper.getTitleFromUrl(url);
+                    Map<String, Integer> freq = processor.getWordFrequencies(content);
 
                     urls.add(url);
                     titles.add(title);
-                    frequencies.add(wordCounts);
+                    frequencies.add(freq);
                 }
             }
-
-    } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + e.getMessage());
         }
-    }
-
-    private void populateDropdown() {
-        if (urls.isEmpty()) {
-            resultsArea.setText("No pages were loaded. Please check your urls.txt file.");
-            return;
-        }
-        for (String title : titles) {
-            pageSelector.addItem(title);
-        }
-        resultsArea.setText("Please select a page to find similar articles.");
-        System.out.println("Ready! Loaded " + urls.size() + " pages.");
     }
 
     private void findSimilarPages() {
         int selectedIndex = pageSelector.getSelectedIndex();
-        if (selectedIndex < 0)
+        if (selectedIndex < 0) {
+            resultsArea.setText("Please select a page first.");
             return;
+        }
 
-        List<SimilarityPair> similarPairs = calculator.findTopSimilar(selectedIndex, frequencies);
+        List<Integer> similarIndices = calculator.findTopSimilar(selectedIndex, frequencies);
 
         StringBuilder result = new StringBuilder();
         result.append("Selected: ").append(titles.get(selectedIndex)).append("\n\n");
+        result.append("Similar pages:\n");
 
-        for (int i = 0; i < similarPairs.size(); i++) {
-            SimilarityPair pair = similarPairs.get(i);
-            result.append(String.format("%d. %s (Similarity: %.3f)\n",
-                    i + 1, titles.get(pair.getIndex()), pair.getSimilarity()));
-            result.append("   URL: ").append(urls.get(pair.getIndex())).append("\n\n");
+        for (int i = 0; i < similarIndices.size(); i++) {
+            int index = similarIndices.get(i);
+            double similarity = calculator.calculateSimilarity(
+                    frequencies.get(selectedIndex),
+                    frequencies.get(index)
+            );
+
+            result.append(String.format("%d. %s (%.3f similarity)\n",
+                    i + 1, titles.get(index), similarity));
+            result.append("   ").append(urls.get(index)).append("\n\n");
         }
+
+        if (similarIndices.isEmpty()) {
+            result.append("No similar pages found.");
+        }
+
         resultsArea.setText(result.toString());
     }
 }
