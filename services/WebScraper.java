@@ -5,37 +5,41 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import java.io.IOException;
 
+/**
+ * A more efficient web scraper that fetches the title and content
+ * of a web page in a single network request.
+ */
 public class WebScraper {
 
-    public String scrapeUrl(String url) {
+    /**
+     * Scrapes a URL for both its title and main article content.
+     * @param url The URL of the Wikipedia page to scrape.
+     * @return A String array where:
+     * - Index 0 is the page title.
+     * - Index 1 is the main article content.
+     * Returns null if the scraping process fails.
+     */
+    public String[] scrapePage(String url) {
         try {
             Document doc = Jsoup.connect(url).get();
-            Element content = doc.selectFirst("#mw-content-text");
 
-            if (content != null) {
-                return content.text().toLowerCase();
+            Element titleElement = doc.selectFirst("h1");
+            String title = "";
+            if (titleElement != null) {
+                title = titleElement.text();
             }
-        } catch (IOException e) {
-            System.err.println("Error scraping " + url + ": " + e.getMessage());
-        }
-        return null;
-    }
+            
+            Element contentElement = doc.selectFirst("#mw-content-text");
+            String content = (contentElement != null) ? contentElement.text() : "";
 
-    public String getTitleFromUrl(String url) {
-        try {
-            Document doc = Jsoup.connect(url).get();
-            Element title = doc.selectFirst("h1");
-            if (title != null) {
-                return title.text();
-            }
+            // Return both pieces of data together.
+            return new String[]{title, content};
+
         } catch (IOException e) {
-            // Fallback to URL parsing
+            System.err.println("Error while scraping " + url + ": " + e.getMessage());
+            // Return null to indicate that the operation failed.
+            return null;
         }
-        // Extract title from URL as fallback
-        String[] parts = url.split("/");
-        if (parts.length > 0) {
-            return parts[parts.length - 1].replace("_", " ");
-        }
-        return "Unknown";
     }
 }
+
