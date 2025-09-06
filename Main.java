@@ -1,8 +1,11 @@
 import ui.RecommendationApp;
+import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) {
-        RecommendationApp app = new RecommendationApp();
-        app.run();
+        SwingUtilities.invokeLater(() -> {
+            RecommendationApp app = new RecommendationApp();
+            app.setVisible(true);
+        });
     }
 }
