@@ -38,7 +38,7 @@ public class Main extends JFrame {
         top.add(pageSelector);
 
         JButton findBtn = new JButton("Find Similar");
-        findBtn.addActionListener(e -> findSimilar());
+        findBtn.addActionListener(_ -> findSimilar());
         top.add(findBtn);
 
         add(top, BorderLayout.NORTH);
@@ -76,13 +76,13 @@ public class Main extends JFrame {
     private HT countWords(String text) {
         HT counts = new HT();
 
-        // Simple tokenization: lowercase, remove punctuation, split on spaces
         String[] words = text.toLowerCase().replaceAll("[^a-z ]", "").split("\\s+");
 
         for (String word : words) {
             if (word.length() > 2 && !STOP_WORDS.contains(word)) {
                 Integer current = (Integer) counts.get(word);
-                counts.add(word, current == null ? 1 : current + 1);
+                if (current == null) counts.add(word, 1);
+                else counts.add(word, current + 1);
             }
         }
         return counts;
@@ -91,31 +91,29 @@ public class Main extends JFrame {
     private void findSimilar() {
         if (pages.isEmpty()) return;
 
-        WebPage selected = pages.get(pageSelector.getSelectedIndex());
+        WebPage selectedPage = pages.get(pageSelector.getSelectedIndex());
         double firstScore = 0, secondScore = 0;
         WebPage firstMatch = null, secondMatch = null;
 
         // Find the two most similar pages
-        for (WebPage other : pages) {
-            if (other == selected) continue;
+        for (WebPage otherPage : pages) {
+            if (otherPage == selectedPage) continue;
 
-            double similarity = cosineSimilarity(selected.wordFreqs, other.wordFreqs);
+            double similarity = cosineSimilarity(selectedPage.wordFreqs, otherPage.wordFreqs);
             if (similarity > firstScore) {
-                // New best match - shift old best to second place
                 secondScore = firstScore;
                 secondMatch = firstMatch;
                 firstScore = similarity;
-                firstMatch = other;
+                firstMatch = otherPage;
             } else if (similarity > secondScore) {
-                // New second best match
                 secondScore = similarity;
-                secondMatch = other;
+                secondMatch = otherPage;
             }
         }
 
         // Display results
         StringBuilder result = new StringBuilder(String.format(
-                "Most similar to \"%s\":\n\n", selected.title));
+                "Most similar to \"%s\":\n\n", selectedPage.title));
 
         if (firstMatch != null) {
             result.append(String.format("1. %s\n   Similarity Score: %.3f\n\n",
@@ -133,29 +131,28 @@ public class Main extends JFrame {
         double dotProduct = 0, mag1 = 0, mag2 = 0;
 
         // Process words in map1
-        for (HT.Node bucket : map1.table) {
+        HT.Node[] table = map1.table;
+        for (HT.Node bucket : table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 String word = (String) node.key;
                 int count1 = (Integer) node.value;
-                Integer count2Obj = (Integer) map2.get(word);
-                int count2 = count2Obj == null ? 0 : count2Obj;
-
-                dotProduct += count1 * count2;
+                // Add to the magnitude of the first vector
                 mag1 += count1 * count1;
-                mag2 += count2 * count2;
-            }
-        }
-
-        // Add remaining words from map2 to mag2
-        for (HT.Node bucket : map2.table) {
-            for (HT.Node node = bucket; node != null; node = node.next) {
-                if (map1.get(node.key) == null) {
-                    int count2 = (Integer) node.value;
-                    mag2 += count2 * count2;
+                // If the same word exists in the second map, add to the dot product
+                Integer count2Obj = (Integer) map2.get(word);
+                if (count2Obj != null) {
+                    dotProduct += count1 * count2Obj;
                 }
             }
         }
-
+        // 2. Iterate through the second map.
+        // Calculate the magnitude of the second vector.
+        for (HT.Node bucket : map2.table) {
+            for (HT.Node node = bucket; node != null; node = node.next) {
+                int count2 = (Integer) node.value;
+                mag2 += count2 * count2;
+            }
+        }
         if (mag1 == 0 || mag2 == 0) return 0;
         return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
     }
