@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>freqs</w>
+      <w>tnull</w>
     </words>
   </dictionary>
 </component>
