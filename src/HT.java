@@ -1,22 +1,29 @@
-class HT {
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+
+class HT implements Serializable {
     static final class Node {
         Object key, value;
         Node next;
         Node(Object k, Object v, Node n) { key = k; value = v; next = n; }
+        Node(Object k, Node n) { key = k; next = n; }
     }
 
     Node[] table = new Node[8];
     int size = 0;
 
-    public Object get(Object key) {
+    Object get(Object key) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
-            if (key.equals(e.key)) return e.value;
+            if (key.equals(e.key))
+                return e.value;
         }
         return null;
     }
 
-    public void add(Object key, Object value) {
+    void add(Object key, Object value) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
             if (key.equals(e.key)) {
@@ -26,17 +33,54 @@ class HT {
         }
         table[i] = new Node(key, value, table[i]);
         if (++size > table.length * 0.75)
-            resize();
+            resizeV2();
+    }
+    void add(Object key) {
+        int h = key.hashCode();
+        int i = h & (table.length - 1);
+        for (Node e = table[i]; e != null; e = e.next) {
+            if (key.equals(e.key))
+                return;
+        }
+        table[i] = new Node(key,table[i]);
+        ++size;
+        if ((float)size/table.length >= 0.75f)
+            resizeV2();
     }
 
-    private void resize() {
-        Node[] old = table;
-        table = new Node[old.length * 2];
-        size = 0;
-        for (Node bucket : old) {
-            for (Node e = bucket; e != null; e = e.next) {
-                add(e.key, e.value);
+    void resizeV2() { // avoids unnecessary creation
+        Node[] oldTable = table;
+        int oldCapacity = oldTable.length;
+        int newCapacity = oldCapacity << 1;
+        Node[] newTable = new Node[newCapacity];
+        for (Node node : oldTable) {
+            Node e = node;
+            while (e != null) {
+                Node next = e.next;
+                int h = e.key.hashCode();
+                int j = h & (newTable.length - 1);
+                e.next = newTable[j];
+                newTable[j] = e;
+                e = next;
             }
         }
+        table = newTable;
+    }
+    @Serial
+    private void writeObject(ObjectOutputStream s) throws Exception {
+        s.defaultWriteObject();
+        s.writeInt(size);
+        for (Node node : table) {
+            for (Node e = node; e != null; e = e.next) {
+                s.writeObject(e.key);
+            }
+        }
+    }
+    @Serial
+    private void readObject(ObjectInputStream s) throws Exception {
+        s.defaultReadObject();
+        int n = s.readInt();
+        for (int i = 0; i < n; ++i)
+            add(s.readObject());
     }
 }
