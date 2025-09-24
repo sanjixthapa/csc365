@@ -66,8 +66,13 @@ public class Main extends JFrame {
                     wikiTitles.add(doc.title());
                     totalDocs++;
                     // Count how many documents each word appears in
-                    countDocumentFrequencies(wordCounts);
-
+                    for (HT.Node bucket : wordCounts.table) {
+                        for (HT.Node node = bucket; node != null; node = node.next) {
+                            String word = (String) node.key;
+                            Integer count = (Integer) wordInDoc.get(word);
+                            wordInDoc.add(word, count == null ? 1 : count + 1);
+                        }
+                    }
                 } catch (Exception e) {
                     System.err.println("Failed: " + url);
                 }
