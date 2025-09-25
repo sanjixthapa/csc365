@@ -3,12 +3,13 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 
-class HT implements Serializable {
-    static final class Node {
+public class HT implements Serializable {
+    public static final class Node {
         Object key, value;
         Node next;
         Node(Object k, Object v, Node n) { key = k; value = v; next = n; }
         Node(Object k, Node n) { key = k; next = n; }
+
     }
 
     Node[] table = new Node[8];
@@ -42,13 +43,13 @@ class HT implements Serializable {
             if (key.equals(e.key))
                 return;
         }
-        table[i] = new Node(key,table[i]);
+        table[i] = new Node(key, table[i]);
         ++size;
         if ((float)size/table.length >= 0.75f)
             resizeV2();
     }
 
-    void resizeV2() { // avoids unnecessary creation
+    void resizeV2() {
         Node[] oldTable = table;
         int oldCapacity = oldTable.length;
         int newCapacity = oldCapacity << 1;
