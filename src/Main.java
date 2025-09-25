@@ -37,7 +37,6 @@ public class Main extends JFrame {
         setLocationRelativeTo(null);
 
         JPanel top = new JPanel();
-        top.add(new JLabel("Page:"));
         dropdown = new JComboBox<>();
         top.add(dropdown);
 
@@ -52,8 +51,8 @@ public class Main extends JFrame {
     }
 
     private void loadPages() {
-        List<HT> allWordCounts = new ArrayList<>(); //word counts for each page.
-        List<String> wikiTitles = new ArrayList<>();   // titles for each page.
+        List<HT> allWordCounts = new ArrayList<>(); //word counts for each page
+        List<String> wikiTitles = new ArrayList<>();// titles for each page
 
         try (BufferedReader reader = new BufferedReader(new FileReader("src/urls"))) {
             String url;
@@ -65,13 +64,13 @@ public class Main extends JFrame {
                     allWordCounts.add(wordCounts);//store
                     wikiTitles.add(doc.title());
                     totalDocs++;
-                    //how many documents each unique word appears in.
+                    //how many docs each unique word appears in
                     for (HT.Node bucket : wordCounts.table) { //traverses array
                         for (HT.Node node = bucket; node != null; node = node.next) { //traverses linked list
                             String word = (String) node.key;
                             Integer count = (Integer) wordInDoc.get(word);
                             if (count == null) {
-                                wordInDoc.add(word, 1);  //first time seeing word
+                                wordInDoc.add(word, 1);//first time seeing word
                             } else {
                                 wordInDoc.add(word, count + 1);// if word is seen, increment doc
                             }
@@ -87,7 +86,7 @@ public class Main extends JFrame {
         }
 
         for (int i = 0; i < allWordCounts.size(); i++) {
-            // for each page, calculate its tfidf scores
+            //for each page, calculate its tfidf scores
             HT tfidfScores = calculateTFIDF(allWordCounts.get(i));
             pages.add(new WebPage(wikiTitles.get(i), tfidfScores));
             dropdown.addItem(wikiTitles.get(i));
@@ -119,7 +118,7 @@ public class Main extends JFrame {
                 totalWords = totalWords + (Integer) node.value;
             }
         }
-        // tfifd for each word in the document.
+        //tfifd for each word in the document.
         for (HT.Node bucket : wordCounts.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 String word = (String) node.key;
@@ -128,7 +127,7 @@ public class Main extends JFrame {
                 double tf = (double) wordFreq / totalWords;
                 double idf = Math.log((double) totalDocs / docsWithWord);
                 double tfidfScore = tf * idf;
-                tfidf.add(word, tfidfScore);
+                tfidf.add(word, tfidfScore);//add word and its score to map
             }
         }
         return tfidf;
@@ -140,8 +139,8 @@ public class Main extends JFrame {
         WebPage best = null, second = null;
         double bestScore = 0, secondScore = 0;
         for (WebPage other : pages) {
-            if (other == selected) continue; //dont compare a page to itself
-            // cosine similarity score between the two pages.
+            if (other == selected) continue; //dont compare page to itself
+            //cos similarity score between the two pages.
             double score = similarity(selected.tfidfScores, other.tfidfScores);
             if (score > bestScore) {
                 second = best;
@@ -167,11 +166,11 @@ public class Main extends JFrame {
     }
 
     private double similarity(HT tfidf1, HT tfidf2) {
-        double dot = 0;// a*b
+        double dot = 0;
         double mag1 = 0;
         double mag2 = 0;
         double finalScore;
-        //iterates through all the words in doc ones tfidf
+        //iterates through all the words in doc one tfidf
         for (HT.Node bucket : tfidf1.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 double score1 = (Double) node.value;
@@ -179,13 +178,12 @@ public class Main extends JFrame {
                 Double score2Obj = (Double) tfidf2.get(node.key);
                 //if the word doesnt exist in the second doc, score = 0
                 double score2 = (score2Obj == null) ? 0 : score2Obj;
-                // Dot Product: sum of (score1 * score2) for each word.
                 dot = dot + (score1 * score2);
                 // Magnitude: sum of (score * score) for each word. We'll square root it later.
                 mag1 = mag1 + (score1 * score1);
             }
         }
-        //iterates through all words in the second doc to get total magnitude
+        //iterates through all words in the second doc
         for (HT.Node bucket : tfidf2.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 double score2 = (Double) node.value;
