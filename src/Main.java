@@ -10,7 +10,7 @@ import java.util.List;
 
 
 public class Main extends JFrame {
-    //  processed data for each webpage
+    //processed data for each webpage
     private final List<WebPage> pages = new ArrayList<>();
     private JComboBox<String> dropdown;
     private JTextArea results;
@@ -104,7 +104,7 @@ public class Main extends JFrame {
             if (current == null) {
                 counts.add(word, 1);//first time
             } else {
-                counts.add(word, current + 1); //inceremnt if we have seen it before
+                counts.add(word, current + 1); //increment if we have seen it before
             }
         }
         return counts;
