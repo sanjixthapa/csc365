@@ -8,7 +8,9 @@ public class HT implements Serializable {
         Object key, value;
         Node next;
         Node(Object k, Object v, Node n) { key = k; value = v; next = n; }
+        Node(Object k, Node n) { key = k; next = n; }
     }
+
     Node[] table = new Node[8];
     int size = 0;
 
@@ -30,6 +32,17 @@ public class HT implements Serializable {
             }
         }
         table[i] = new Node(key, value, table[i]);
+        if (++size > table.length * 0.75)
+            resizeV2();
+    }
+    void add(Object key) {
+        int h = key.hashCode();
+        int i = h & (table.length - 1);
+        for (Node e = table[i]; e != null; e = e.next) {
+            if (key.equals(e.key))
+                return;
+        }
+        table[i] = new Node(key, table[i]);
         ++size;
         if ((float)size/table.length >= 0.75f)
             resizeV2();
@@ -60,19 +73,14 @@ public class HT implements Serializable {
         for (Node node : table) {
             for (Node e = node; e != null; e = e.next) {
                 s.writeObject(e.key);
-                s.writeObject(e.value);
             }
         }
     }
     @Serial
     private void readObject(ObjectInputStream s) throws Exception {
         s.defaultReadObject();
-        table = new Node[8];
         int n = s.readInt();
-        for (int i = 0; i < n; ++i) {
-            Object key = s.readObject();
-            Object value = s.readObject();
-            add(key, value);
-        }
+        for (int i = 0; i < n; ++i)
+            add(s.readObject());
     }
 }

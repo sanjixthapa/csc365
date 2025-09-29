@@ -10,16 +10,14 @@ import java.util.List;
 
 
 public class Main extends JFrame {
-    //processed data for each webpage
-    private final List<WebPage> pages = new ArrayList<>();
+    private final List<WebPage> pages = new ArrayList<>();//list of ht of tfidf & title for each url
     private JComboBox<String> dropdown;
     private JTextArea results;
 
-    private final HT wordInDoc = new HT();
+    private final HT wordInDoc = new HT();//# of urls a word appears in
     private int totalDocs = 0;
 
-    // webpage with its title and tfidf
-    private record WebPage(String title, HT tfidfScores) {}
+    private record WebPage(String title, HT tfidfScores) {}//stores tfidf & title for each url
 
     public static void main() {
         SwingUtilities.invokeLater(() -> new Main().setVisible(true));
@@ -64,7 +62,7 @@ public class Main extends JFrame {
                     allWordCounts.add(wordCounts);//store
                     wikiTitles.add(doc.title());
                     totalDocs++;
-                    //how many docs each unique word appears in
+                    //how many articles each unique word appears in
                     for (HT.Node bucket : wordCounts.table) { //traverses array
                         for (HT.Node node = bucket; node != null; node = node.next) { //traverses linked list
                             String word = (String) node.key;
@@ -86,7 +84,7 @@ public class Main extends JFrame {
         }
 
         for (int i = 0; i < allWordCounts.size(); i++) {
-            //for each page, calculate its tfidf scores
+            //for each article, calculate its tfidf scores
             HT tfidfScores = calculateTFIDF(allWordCounts.get(i));
             pages.add(new WebPage(wikiTitles.get(i), tfidfScores));
             dropdown.addItem(wikiTitles.get(i));
@@ -118,7 +116,7 @@ public class Main extends JFrame {
                 totalWords = totalWords + (Integer) node.value;
             }
         }
-        //tfifd for each word in the document.
+        //tfifd for each word in the wiki
         for (HT.Node bucket : wordCounts.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 String word = (String) node.key;
@@ -170,16 +168,15 @@ public class Main extends JFrame {
         double mag1 = 0;
         double mag2 = 0;
         double finalScore;
-        //iterates through all the words in doc one tfidf
+        //iterates through all the words in wiki tfidf
         for (HT.Node bucket : tfidf1.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 double score1 = (Double) node.value;
-                // get score for same word from second doc
+                // get score for same word from second wiki
                 Double score2Obj = (Double) tfidf2.get(node.key);
-                //if the word doesnt exist in the second doc, score = 0
+                //if the word doesnt exist in the second doc, score2 = 0
                 double score2 = (score2Obj == null) ? 0 : score2Obj;
                 dot = dot + (score1 * score2);
-                // Magnitude: sum of (score * score) for each word. We'll square root it later.
                 mag1 = mag1 + (score1 * score1);
             }
         }
