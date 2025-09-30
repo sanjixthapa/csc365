@@ -10,14 +10,14 @@ import java.util.List;
 
 
 public class Main extends JFrame {
-    private final List<WebPage> pages = new ArrayList<>();//list of ht of tfidf & title for each url
+    private record WebPage(String title, HT tfidfScores) {}//stores tfidf & title for each url
+
+    private final List<WebPage> pages = new ArrayList<>();//list of tfidf & title for each url
     private JComboBox<String> dropdown;
     private JTextArea results;
 
     private final HT wordInDoc = new HT();//# of urls a word appears in
     private int totalDocs = 0;
-
-    private record WebPage(String title, HT tfidfScores) {}//stores tfidf & title for each url
 
     public static void main() {
         SwingUtilities.invokeLater(() -> new Main().setVisible(true));
@@ -49,8 +49,8 @@ public class Main extends JFrame {
     }
 
     private void loadPages() {
-        List<HT> allWordCounts = new ArrayList<>(); //word counts for each page
-        List<String> wikiTitles = new ArrayList<>();// titles for each page
+        List<HT> allWordCounts = new ArrayList<>(); //list of word counts for each page
+        List<String> wikiTitles = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader("src/urls"))) {
             String url;
@@ -62,7 +62,7 @@ public class Main extends JFrame {
                     allWordCounts.add(wordCounts);//store
                     wikiTitles.add(doc.title());
                     totalDocs++;
-                    //how many articles each unique word appears in
+                    //# of articles each unique word appears in
                     for (HT.Node bucket : wordCounts.table) { //traverses array
                         for (HT.Node node = bucket; node != null; node = node.next) { //traverses linked list
                             String word = (String) node.key;
@@ -70,7 +70,7 @@ public class Main extends JFrame {
                             if (count == null) {
                                 wordInDoc.add(word, 1);//first time seeing word
                             } else {
-                                wordInDoc.add(word, count + 1);// if word is seen, increment doc
+                                wordInDoc.add(word, count + 1);// if word is seen, increment
                             }
                         }
                     }
@@ -84,7 +84,7 @@ public class Main extends JFrame {
         }
 
         for (int i = 0; i < allWordCounts.size(); i++) {
-            //for each article, calculate its tfidf scores
+            //for each article calculate its tfidf scores
             HT tfidfScores = calculateTFIDF(allWordCounts.get(i));
             pages.add(new WebPage(wikiTitles.get(i), tfidfScores));
             dropdown.addItem(wikiTitles.get(i));
@@ -96,7 +96,6 @@ public class Main extends JFrame {
         HT counts = new HT();
         String[] words = text.toLowerCase()
                 .replaceAll("[^a-z ]", "").split("\\s+");
-
         for (String word : words) {
             Integer current = (Integer) counts.get(word);
             if (current == null) {
@@ -116,12 +115,12 @@ public class Main extends JFrame {
                 totalWords = totalWords + (Integer) node.value;
             }
         }
-        //tfifd for each word in the wiki
+        //tfidf for each word in the wiki
         for (HT.Node bucket : wordCounts.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 String word = (String) node.key;
                 int wordFreq = (Integer) node.value;
-                int docsWithWord = (Integer) wordInDoc.get(word); //how many docs contain this word
+                int docsWithWord = (Integer) wordInDoc.get(word); //how many articles contain this word
                 double tf = (double) wordFreq / totalWords;
                 double idf = Math.log((double) totalDocs / docsWithWord);
                 double tfidfScore = tf * idf;
@@ -132,7 +131,6 @@ public class Main extends JFrame {
     }
 
     private void findSimilar() {
-        if (pages.isEmpty()) return;
         WebPage selected = pages.get(dropdown.getSelectedIndex());
         WebPage best = null, second = null;
         double bestScore = 0, secondScore = 0;

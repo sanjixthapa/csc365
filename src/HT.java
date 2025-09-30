@@ -10,7 +10,6 @@ public class HT implements Serializable {
         Node(Object k, Object v, Node n) { key = k; value = v; next = n; }
         Node(Object k, Node n) { key = k; next = n; }
     }
-
     Node[] table = new Node[8];
     int size = 0;
 
@@ -23,7 +22,7 @@ public class HT implements Serializable {
         return null;
     }
 
-    void add(Object key, Object value) {
+    public void add(Object key, Object value) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
             if (key.equals(e.key)) {
@@ -32,12 +31,12 @@ public class HT implements Serializable {
             }
         }
         table[i] = new Node(key, value, table[i]);
-        if (++size > table.length * 0.75)
+        if ((float)size/table.length >= 0.75f)
             resizeV2();
     }
-    void add(Object key) {
-        int h = key.hashCode();
-        int i = h & (table.length - 1);
+
+    public void add(Object key) {
+        int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
             if (key.equals(e.key))
                 return;
@@ -48,7 +47,7 @@ public class HT implements Serializable {
             resizeV2();
     }
 
-    void resizeV2() {
+    public void resizeV2() {
         Node[] oldTable = table;
         int oldCapacity = oldTable.length;
         int newCapacity = oldCapacity << 1;
