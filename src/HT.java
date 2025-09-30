@@ -3,43 +3,50 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 
-public class HT implements Serializable {
-    public static final class Node {
+class HT implements Serializable {
+    static final class Node {
         Object key, value;
         Node next;
-        Node(Object k, Object v, Node n) { key = k; value = v; next = n; }
-        Node(Object k, Node n) { key = k; next = n; }
+        int count;//
+        Node(Object k, Object v, Node n) { key = k; value = v; next = n; count = 1;}
+        Node(Object k, Node n) { key = k; next = n; count = 1;}
     }
-    Node[] table = new Node[8];
+    Node[] table = new Node[8];// always a power of 2
     int size = 0;
 
     Object get(Object key) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
-            if (key.equals(e.key))
+            if (key.equals(e.key)) {
+                e.count++;
                 return e.value;
+            }
         }
         return null;
     }
 
-    public void add(Object key, Object value) {
+    void add(Object key, Object value) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
             if (key.equals(e.key)) {
                 e.value = value;
+                e.count++;
                 return;
             }
         }
         table[i] = new Node(key, value, table[i]);
+        ++size;
         if ((float)size/table.length >= 0.75f)
             resizeV2();
     }
 
-    public void add(Object key) {
+    void add(Object key) {
         int i = key.hashCode() & (table.length - 1);
         for (Node e = table[i]; e != null; e = e.next) {
-            if (key.equals(e.key))
+            if (key.equals(e.key)) {
+                e.count++;
                 return;
+            }
         }
         table[i] = new Node(key, table[i]);
         ++size;
@@ -47,7 +54,16 @@ public class HT implements Serializable {
             resizeV2();
     }
 
-    public void resizeV2() {
+    int getCount(Object key) {
+        int i = key.hashCode() & (table.length - 1);
+        for (Node e = table[i]; e != null; e = e.next) {
+            if (key.equals(e.key))
+                return e.count;
+        }
+        return 0;
+    }
+
+    void resizeV2() {// avoids unnecessary creation
         Node[] oldTable = table;
         int oldCapacity = oldTable.length;
         int newCapacity = oldCapacity << 1;

@@ -63,15 +63,10 @@ public class Main extends JFrame {
                     wikiTitles.add(doc.title());
                     totalDocs++;
                     //# of articles each unique word appears in
-                    for (HT.Node bucket : wordCounts.table) { //traverses array
-                        for (HT.Node node = bucket; node != null; node = node.next) { //traverses linked list
+                    for (HT.Node bucket : wordCounts.table) {
+                        for (HT.Node node = bucket; node != null; node = node.next) {
                             String word = (String) node.key;
-                            Integer count = (Integer) wordInDoc.get(word);
-                            if (count == null) {
-                                wordInDoc.add(word, 1);//first time seeing word
-                            } else {
-                                wordInDoc.add(word, count + 1);// if word is seen, increment
-                            }
+                            wordInDoc.add(word);
                         }
                     }
                 } catch (Exception e) {
@@ -97,12 +92,7 @@ public class Main extends JFrame {
         String[] words = text.toLowerCase()
                 .replaceAll("[^a-z ]", "").split("\\s+");
         for (String word : words) {
-            Integer current = (Integer) counts.get(word);
-            if (current == null) {
-                counts.add(word, 1);//first time
-            } else {
-                counts.add(word, current + 1); //increment if we have seen it before
-            }
+            counts.add(word);
         }
         return counts;
     }
@@ -112,15 +102,15 @@ public class Main extends JFrame {
         int totalWords = 0;
         for (HT.Node bucket : wordCounts.table) {//traverses array
             for (HT.Node node = bucket; node != null; node = node.next) {//traverses linked list
-                totalWords = totalWords + (Integer) node.value;
+                totalWords = totalWords + node.count;
             }
         }
         //tfidf for each word in the wiki
         for (HT.Node bucket : wordCounts.table) {
             for (HT.Node node = bucket; node != null; node = node.next) {
                 String word = (String) node.key;
-                int wordFreq = (Integer) node.value;
-                int docsWithWord = (Integer) wordInDoc.get(word); //how many articles contain this word
+                int wordFreq =  node.count;
+                int docsWithWord = wordInDoc.getCount(word);
                 double tf = (double) wordFreq / totalWords;
                 double idf = Math.log((double) totalDocs / docsWithWord);
                 double tfidfScore = tf * idf;
@@ -136,7 +126,6 @@ public class Main extends JFrame {
         double bestScore = 0, secondScore = 0;
         for (WebPage other : pages) {
             if (other == selected) continue; //dont compare page to itself
-            //cos similarity score between the two pages.
             double score = similarity(selected.tfidfScores, other.tfidfScores);
             if (score > bestScore) {
                 second = best;
@@ -151,12 +140,10 @@ public class Main extends JFrame {
         StringBuilder result = new StringBuilder();
         result.append(" Most similar to \"").append(selected.title).append("\":\n\n");
         if (best != null) {
-            result.append(" 1. ").append(best.title).append("\n   Score: ")
-                    .append(String.format("%.3f", bestScore)).append("\n\n");
+            result.append(String.format(" 1. %s\n Score: %.3f\n\n", best.title, bestScore));
         }
         if (second != null) {
-            result.append(" 2. ").append(second.title).append("\n   Score: ")
-                    .append(String.format("%.3f", secondScore));
+            result.append(String.format(" 2. %s\n Score: %.3f", second.title, secondScore));
         }
         results.setText(String.valueOf(result));
     }
@@ -172,7 +159,7 @@ public class Main extends JFrame {
                 double score1 = (Double) node.value;
                 // get score for same word from second wiki
                 Double score2Obj = (Double) tfidf2.get(node.key);
-                //if the word doesnt exist in the second doc, score2 = 0
+                //if the word doesnt exist in the second article, score2 = 0
                 double score2 = (score2Obj == null) ? 0 : score2Obj;
                 dot = dot + (score1 * score2);
                 mag1 = mag1 + (score1 * score1);
