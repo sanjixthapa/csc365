@@ -103,36 +103,20 @@ class HT implements Serializable {
     }
 
     @Serial
-    private void writeObject(ObjectOutputStream s) throws IOException {
+    private void writeObject(ObjectOutputStream s) throws Exception {
         s.defaultWriteObject();
         s.writeInt(size);
-        for (Node bucket : table) {
-            for (Node e = bucket; e != null; e = e.next) {
+        for (Node node : table) {
+            for (Node e = node; e != null; e = e.next) {
                 s.writeObject(e.key);
-                s.writeObject(e.value);
-                s.writeInt(e.count);
             }
         }
     }
-
     @Serial
-    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream s) throws Exception {
         s.defaultReadObject();
         int n = s.readInt();
-        for (int i = 0; i < n; i++) {
-            Object key = s.readObject();
-            Object value = s.readObject();
-            int count = s.readInt();
-            add(key, value);
-
-            // Restore original count
-            int idx = key.hashCode() & (table.length - 1);
-            for (Node e = table[idx]; e != null; e = e.next) {
-                if (key.equals(e.key)) {
-                    e.count = count;
-                    break;
-                }
-            }
-        }
+        for (int i = 0; i < n; ++i)
+            add(s.readObject());
     }
 }
