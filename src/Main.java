@@ -28,7 +28,7 @@ public class Main extends JFrame {
         loadPages();
     }
 
-    private void setupUI() {
+    public void setupUI() {
         setTitle("Wikipedia Recommender");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(500, 300);
@@ -48,7 +48,7 @@ public class Main extends JFrame {
         add(results, BorderLayout.CENTER);
     }
 
-    private void loadPages() {
+    public void loadPages() {
         List<HT> allWordCounts = new ArrayList<>(); //list of word counts for each page
         List<String> wikiTitles = new ArrayList<>();
 
@@ -87,7 +87,7 @@ public class Main extends JFrame {
         results.setText(" Select page and click Find Similar");
     }
 
-    private HT countWords(String text) {
+    public HT countWords(String text) {
         HT counts = new HT();
         String[] words = text.toLowerCase()
                 .replaceAll("[^a-z ]", "").split("\\s+");
@@ -97,7 +97,7 @@ public class Main extends JFrame {
         return counts;
     }
 
-    private HT calculateTFIDF(HT wordCounts) {
+    public HT calculateTFIDF(HT wordCounts) {
         HT tfidf = new HT();
         int totalWords = 0;
         for (HT.Node bucket : wordCounts.table) {//traverses array
@@ -120,7 +120,7 @@ public class Main extends JFrame {
         return tfidf;
     }
 
-    private void findSimilar() {
+    public void findSimilar() {
         WebPage selected = pages.get(dropdown.getSelectedIndex());
         WebPage best = null, second = null;
         double bestScore = 0, secondScore = 0;
@@ -148,7 +148,7 @@ public class Main extends JFrame {
         results.setText(String.valueOf(result));
     }
 
-    private double similarity(HT tfidf1, HT tfidf2) {
+    public double similarity(HT tfidf1, HT tfidf2) {
         double dot = 0;
         double mag1 = 0;
         double mag2 = 0;
