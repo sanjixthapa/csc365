@@ -7,17 +7,16 @@ import javax.swing.*;
 import java.lang.reflect.*;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
 public class MainTest {
-    //helper to get private fields
+    //helper func to get private fields
     private <T> T getField(Main m, String name, Class<T> type) throws Exception {
         Field f = Main.class.getDeclaredField(name);
         f.setAccessible(true);
         return type.cast(f.get(m));
     }
-    //write to urlfile
+    //write to urlfile for test cases
     private void writeUrlsFile(String content) throws IOException {
         File urlsFile = new File("src/urls");
         urlsFile.getParentFile().mkdirs();
@@ -33,7 +32,7 @@ public class MainTest {
         }
     }
     @Test
-    //test loadPages
+    //test cases for loadPages:
     public void L1() throws Exception{
         //test num of urls
         writeUrlsFile("https://en.wikipedia.org/wiki/Test_automation\n" +
@@ -97,9 +96,9 @@ public class MainTest {
         assertTrue("Prints error to console", output.contains("Failed: https://en.wikipedia.org/wiki/invalidurl"));     
         System.setErr(origErr);
     }
-    
 
-    //tests for countWords method
+
+    //tests for countWords method:
     @Test
     //should ignore numeric chars too
     public void CW1() {
@@ -130,5 +129,81 @@ public class MainTest {
         assertEquals(3, result.getCount("hello"));
     }
     
-    
+
+    //calculateTFIDF test cases:
+    @Test
+    public void TF1() {
+        //Normal calculation
+
+    }
+
+    @Test
+    public void TF2() {
+        //empty wordCount test
+        Main main = new Main();
+
+        HT wordCounts = new HT();
+        HT tfidf = main.calculateTFIDF(wordCounts);
+        assertEquals(0, tfidf.getCount(tfidf));
+        
+    }
+
+    //similarity method test cases:
+    @Test
+    public void S1() {
+        //identical vectors, non-empty HTs
+        Main main = new Main();
+
+    }
+
+
+    //findSimilar method test cases:
+    @Test
+    public void FS1() throws Exception {
+        //normal similarity check
+        writeUrlsFile("https://en.wikipedia.org/wiki/Test_automation\n" +
+            "https://en.wikipedia.org/wiki/JUnit\n" +
+            "https://en.wikipedia.org/wiki/Regression_testing\n");
+
+        Main main = new Main();
+        JComboBox<String> dropdown = getField(main, "dropdown", JComboBox.class);
+        List<?> pages = getField(main, "pages", List.class);
+        JTextArea results = getField(main,"results",JTextArea.class);
+
+        dropdown.setSelectedIndex(0);
+        String selectedTitle = (String)dropdown.getSelectedItem();
+
+        main.findSimilar();
+
+        String out = results.getText();
+        //recommended does not select itself
+        assertFalse("findSimilar should not recommend selected page", out.contains(" 1. " + selectedTitle) || out.contains(" 2. " + selectedTitle));
+    }
+    @Test
+    public void FS4() throws Exception {
+    //arrange: only one URL
+        writeUrlsFile("https://en.wikipedia.org/wiki/JUnit\n");
+
+        Main main = new Main();
+
+        JComboBox<String> dropdown = getField(main, "dropdown", JComboBox.class);
+        JTextArea results = getField(main, "results", JTextArea.class);
+        List<?> pages = getField(main, "pages", List.class);
+
+        //expect exactly 1 page loaded
+        assertEquals(1, pages.size());
+        assertEquals(1, dropdown.getItemCount());
+
+        //select that only page
+        dropdown.setSelectedIndex(0);
+
+        main.findSimilar();
+
+        String out = results.getText();
+
+       //assert num "1." or "2." lines in results
+       assertFalse(out.contains(" 1."));
+       assertFalse(out.contains(" 2."));
+}
+
 }
